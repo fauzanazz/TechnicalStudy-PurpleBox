@@ -1,8 +1,22 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
 
 const router = express.Router();
+
+
+const upload = multer({
+    dest: 'uploads/',
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (checkFileType(file.originalname, 'images') || checkFileType(file.originalname, 'pdf')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Invalid file type. Only images and PDFs are allowed.'));
+        }
+    }
+});
 
 // File type validation
 function checkFileType(fileName, type) {
@@ -23,36 +37,22 @@ function checkFileType(fileName, type) {
 }
 
 // Upload route
-router.post('/upload', (req, res) => {
-    const file = req.files?.file;
+router.post('/upload', upload.single('file'), (req, res) => {
+    const file = req.file;
 
     if (!file) {
         return res.status(400).json({ message: 'No file uploaded' });
     }
 
-    // Sanitize file name
-    file.name = file.name.replace(/[^a-z0-9.]/gi, '_');
-
-    // Validate file type
-    if (!checkFileType(file.name)) {
-        return res.status(400).json({ message: 'Invalid file type. Only images and PDFs are allowed.' });
-    }
-
-    // Validate file size (5MB limit)
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-        return res.status(400).json({ message: 'File size exceeds the 5MB limit' });
-    }
-
     // Ensure uploads directory exists
-    const uploadDir = path.join(__dirname, '../uploads');
+    const uploadDir = path.join(__dirname, 'uploads');
     if (!fs.existsSync(uploadDir)) {
         fs.mkdirSync(uploadDir);
     }
 
     // Save the file
-    const filePath = path.join(uploadDir, Date.now() + path.extname(file.name));
-    fs.writeFile(filePath, file.data, (err) => {
+    const filePath = path.join(uploadDir, Date.now() + path.extname(file.originalname));
+    fs.rename(file.path, filePath, (err) => {
         if (err) {
             return res.status(500).json({ message: 'File upload failed', error: err });
         }
