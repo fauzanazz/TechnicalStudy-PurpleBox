@@ -1,17 +1,12 @@
 const express = require('express');
 const crypto = require('crypto');
 const users = require('../models/user');
+const generateToken = require("../generateToken");
 
 const router = express.Router();
 
-const TOKEN_SECRET = process.env.TOKEN_SECRET
-
 function hashPassword(password) {
     return crypto.createHash('sha256').update(password).digest('hex');
-}
-
-function generateToken(username) {
-    return crypto.createHmac('sha256', TOKEN_SECRET).update(username).digest('hex');
 }
 
 // Route to register a new user
