@@ -1,2 +1,4 @@
 # IDE
 /.idea
+/Backend System/node_modules
+/Backend System/.idea
